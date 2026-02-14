@@ -1,7 +1,49 @@
 ﻿@page "/"
+@inject IOptions<ApiSettings> ApiSettings
 
 <PageTitle>Home</PageTitle>
 
 <h1>Hello, world!</h1>
 
 Welcome to your new app.
+
+<br />
+
+This is a simple test : 
+
+<div class="text-danger">
+    @((MarkupString)Markdig.Markdown.ToHtml(answer))
+</div>
+
+@code {
+    @using Microsoft.Extensions.Options;
+    @using System.Threading.Tasks;
+    @using Google.GenAI;
+    @using Google.GenAI.Types;
+    @using Microsoft.VisualBasic;
+    private string apiKey;
+    string answer = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        apiKey = ApiSettings.Value.GeminiAPIKey;
+        answer = await GenerateContentSimpleText.main(apiKey);
+        StateHasChanged();
+
+    }
+
+    public class GenerateContentSimpleText {
+
+        String answer = "";
+        public static async Task<string> main(string apiKey) {
+
+            var client = new Client(apiKey:apiKey);
+            var response = await client.Models.GenerateContentAsync(
+                model: "gemini-3-flash-preview", contents: "Explain how AI works in a few words and use markdown styling"
+            );
+            return response.Candidates[0].Content.Parts[0].Text;
+
+        }
+
+    }
+}
