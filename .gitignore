@@ -21,6 +21,7 @@ bld/
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+.editorconfig
 
 # User-specific files
 *.rsuser
