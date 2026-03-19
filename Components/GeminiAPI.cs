@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Google.GenAI;
 using Google.GenAI.Types;
 using Microsoft.Extensions.Options;
@@ -15,43 +16,70 @@ public class GeminiAPI {
         _client = new Client(apiKey: apiKey);
     }
 
-    public async Task FetchNewsAsync(List<string> interests) {
-        if (interests == null || !interests.Any()) return;
+    public async Task FetchNewsAsync(List<string> interests, bool isBelgiumNewsWanted, bool isWorldNewsWanted) {
+        bool hasInterest = interests == null || !interests.Any();
+        if (!hasInterest && !isBelgiumNewsWanted && !isWorldNewsWanted) return;
 
-        string promptText = $"Find today's news for: {string.Join(", ", interests)}";
+        List<string> sections = new List<string>();
+        string yesterday = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
+
+        if(isBelgiumNewsWanted) sections.Add($"Find the 3 most important breaking from BELGIUM after:{yesterday}.");
+        if(isWorldNewsWanted) sections.Add($"Find the 3 most significant global headlines after:{yesterday}.");
+        if(!(interests == null || !interests.Any())) sections.Add($"Find 1 news story after:{yesterday} for: {string.Join(", ", interests)}.");
+
+        string promptText = $"Perform these searches and combine them into one JSON array: {string.Join(". ", sections)}";
+        
 
         try {
             var response = await _client.Models.GenerateContentAsync(
-                model: "models/gemini-2.5-flash-lite", 
+                model: "models/gemini-2.5-flash", 
                 contents: new List<Content> { 
                     new Content { Parts = new List<Part> { new Part { Text = promptText } } } 
                 },
                 config: new GenerateContentConfig {
                     SystemInstruction = new Content { 
-                        Parts = new List<Part> { new Part { Text = @"
-                            You are a news assistant. 
-                            Use Google Search to find one story for each interest.
-                            Summaries must be 3-4 sentences. 
-                            Output ONLY a valid JSON array. 
-                            Format: [{""topic"": """", ""newsTitle"": """", ""summary"": """", ""sourceUrl"": """"}]
-                            Never return an empty array []. Always provide at least one news item.
-                            If no news found, write ""no news found"""
+                        Parts = new List<Part> { new Part { Text = $@"
+                            You are a high-precision news assistant. Today's date is {DateTime.Now:MMMM dd, yyyy}.
+
+                            1. FRESHNESS: Find ONLY ONE news story for each interest. 
+                            Every story MUST have been published within the last 24 hours (on or after {DateTime.Now.AddDays(-1):MMMM dd}).
+                            2. NEWS SOURCE : major, reputable news organizations (e.g., Reuters, AP, TechCrunch, BBC). 
+                            Avoid blogs, social media posts, or login-walled content.
+                            3. CANONICAL LINKS: For the 'sourceUrl', you MUST provide the direct, original URL of the news article. 
+                            DO NOT use redirection links, proxy links, or URLs starting with 'vertexaisearch.cloud.google.com'. 
+                            4. BREVITY: Summaries for BELGIUM and GLOBAL should be 2 sentences. Summaries for specific interests should be 3-4 sentences.
+                            5. TOPICS : For Belgium/Global topics, use incremental values like 'Belgium 01', 'Belgium 02'.
+                            5. OUTPUT: Return ONLY a valid JSON array.
+                            Format: [{{""topic"": """", ""newsTitle"": """", ""summary"": """", ""sourceUrl"": """"}}]
+
+                            If no recent news exists for a topic, omit that topic from the array. 
+                            Always provide at least one total item."
                         } } 
                     },
                     Tools = new List<Tool> { new Tool { GoogleSearch = new GoogleSearch() } }
                 }
             );
 
-            string? rawText = response.Candidates?[0].Content?.Parts?[0]?.Text;
+            var candidate = response.Candidates?[0];
+            string? rawJson = candidate?.Content?.Parts?[0]?.Text;
 
-            if (!string.IsNullOrEmpty(rawText)) {
-                int start = rawText.IndexOf('[');
-                int end = rawText.LastIndexOf(']');
+            if (!string.IsNullOrEmpty(rawJson)) {
+                string jsonPart = ExtractJson(rawJson);
+                var articles = JsonSerializer.Deserialize<List<NewsItem>>(jsonPart, 
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                if (start != -1 && end != -1 && end > start) {
-                    _lastResponse = rawText.Substring(start, (end - start) + 1);
-                } else {
-                    _lastResponse = "[]"; 
+
+                if (articles != null) {
+                    List<Task> resolveTasks = new List<Task>();
+
+                    foreach (var article in articles) {
+                        resolveTasks.Add(Task.Run(async () => {
+                            article.sourceUrl = await ResolveLinkAsync(article.sourceUrl);
+                        }));
+                    }
+
+                    await Task.WhenAll(resolveTasks);
+                    _lastResponse = JsonSerializer.Serialize(articles);
                 }
             }
         } catch (Exception ex) {
@@ -66,5 +94,28 @@ public class GeminiAPI {
         await foreach (var m in models) {
             Console.WriteLine($"Available: {m.Name}");
         }
+    }
+
+    private async Task<string> ResolveLinkAsync(string redirectURL) {
+        
+        try {
+            using var httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+            var httpResponse = await httpClient.GetAsync(redirectURL);
+
+            string? cleanURL = httpResponse.Headers.Location?.ToString();
+            return cleanURL ?? redirectURL;
+
+        } catch {
+            return redirectURL;
+        }
+
+    }
+
+    private string ExtractJson(string text) {
+        
+        int start = text.IndexOf('[');
+        int end = text.LastIndexOf(']');
+        return (start != -1 && end != -1) ? text.Substring(start, (end - start) + 1) : "[]";
+
     }
 }
