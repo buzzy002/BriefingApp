@@ -1,13 +1,59 @@
 ﻿@page "/"
-@inject GeminiAPI GeminiService
 
 <PageTitle>Home</PageTitle>
 
 <h1>My News Briefing</h1>
 
-<!-- <div class="text-danger">
-    @((MarkupString)Markdig.Markdown.ToHtml("**Coucou**"))
-</div> -->
+<div class="container my-4">
+    <div class="row">
+        <div class="col-auto">
+            <label for="preferedTime" class="col-form-label">Set your prefered time to receive your briefing</label>
+        </div>
+        <div class="col-auto">
+            <input id="preferedTime" type="time" class="form-control" @bind="preferences.preferedTime" @bind:after="OnPreferedTimeChanged" />
+        </div>
+    </div>
+
+    <div class="row">
+        <h3>Interests</h3>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="switchBelgiumNews" @bind="@preferences.isBelgiumNewsWanted" @bind:after="OnToggleBelgiumNews" />
+                <label class="form-check-label" for="switchBelgiumNews">Include Belgian news</label>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="switchWorldNews" @bind="@preferences.isWorldNewsWanted" @bind:after="OnToggleWorldNews" />
+                <label class="form-check-label" for="switchWorldNews">Include World news</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="row align-items-center">
+        @foreach (string interest in preferences.interests) {
+            string? captured = interest;
+            <div class="col-1 text-danger">
+                <button class="btn-close" type="button" @onclick="() => RemoveInterest(captured)"/>
+            </div>
+            
+            <div class="col-11 my-2">
+                @captured
+            </div>
+        }
+        <div class="col-12 mt-3">
+            <input @bind="newInterest" type="text" class="form-control" />
+            <button type="button" class="btn btn-primary" @onclick="AddInterest"> Add new interest </button>
+        </div>
+        
+    </div>
+    
+</div>
+
 
 <div class="container my-4">
 
@@ -32,22 +78,3 @@
         </div>
     }
 </div>
-
-
-@code {
-    @using Microsoft.VisualBasic;
-
-    private string? response;
-    private bool isLoading = false;
-    private List<string> myInterests = new List<string> { "Dotnet 10", "Cybersecurity" };
-
-    private async Task GetNews() {
-        isLoading = true;
-        StateHasChanged();
-        await GeminiService.FetchNewsAsync(myInterests);
-        response = GeminiService.GetResponse();
-        isLoading = false;
-        StateHasChanged();
-    }
-}
-
