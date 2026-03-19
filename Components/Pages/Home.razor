@@ -1,6 +1,14 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 
 <PageTitle>Home</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <p>Welcome @currentUser?.Email !</p>
+    </Authorized>
+</AuthorizeView>
 
 <h1>My News Briefing</h1>
 

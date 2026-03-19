@@ -1,17 +1,32 @@
 using Microsoft.AspNetCore.Components;
+using BriefingApp.Models;
+using BriefingApp.Services;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace BriefingApp.Components.Pages;
 
 public partial class Home {
 
-    [Inject]
-    private GeminiAPI GeminiService { get; set; } = default!;
-    [Inject]
-    private ILogger<Home> Logger { get; set; } = default!;
+    [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+    [Inject] private UserManager<AppUser> UserManager { get; set; } = default!;
+    [Inject] private GeminiAPI GeminiService { get; set; } = default!;
+    [Inject] private ILogger<Home> Logger { get; set; } = default!;
+
+    private AppUser? currentUser;
     private UserPreferences preferences = new UserPreferences();
     private string? response;
     private bool isLoading = false;
     private string newInterest = string.Empty;
+
+    protected override async Task OnInitializedAsync() {
+        
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var claimUser = authState.User;
+
+        if(claimUser.Identity?.IsAuthenticated == true) currentUser = await UserManager.GetUserAsync(claimUser);
+
+    }
 
     private async Task GetNews() {
         if(preferences.HasNotInterest()) return;

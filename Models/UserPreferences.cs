@@ -1,9 +1,8 @@
-
-
-namespace BriefingApp.Components;
+namespace BriefingApp.Models;
 
 public class UserPreferences {
     
+    public int Id { get; set; }
     public List<string> interests { get; set; }
     public TimeOnly preferedTime {get; set;}
     public bool isBelgiumNewsWanted;

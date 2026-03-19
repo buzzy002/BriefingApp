@@ -3,7 +3,7 @@ using Google.GenAI;
 using Google.GenAI.Types;
 using Microsoft.Extensions.Options;
 
-namespace BriefingApp.Components;
+namespace BriefingApp.Services;
 
 public class GeminiAPI {
     private readonly Client _client;

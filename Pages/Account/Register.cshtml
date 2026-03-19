@@ -1,0 +1,16 @@
+@page
+@model BriefingApp.Pages.Account.RegisterModel
+
+<form method="post">
+    @Html.AntiForgeryToken()
+
+    @if(Model.Error != null) {
+        <div class="alert alert-danger">
+            @Model.Error
+        </div>
+    }
+
+    <input type="email" name="Email" class="formControl" placeholder="Email" />
+    <input type="password" name="Password" class="form-control" placeholder="Password" />
+    <button type="submit" class="btn btn-primary">Register</button>
+</form>
