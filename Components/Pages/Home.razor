@@ -1,49 +1,53 @@
 ﻿@page "/"
-@inject IOptions<ApiSettings> ApiSettings
+@inject GeminiAPI GeminiService
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>My News Briefing</h1>
 
-Welcome to your new app.
+<!-- <div class="text-danger">
+    @((MarkupString)Markdig.Markdown.ToHtml("**Coucou**"))
+</div> -->
 
-<br />
+<div class="container my-4">
 
-This is a simple test : 
+    <button type="button" class="btn btn-primary btn-lg"
+        @onclick="GetNews"
+        disabled=@isLoading>
+        @if (isLoading) {
+            <span class="spinner-border spinner-border-sm" role="status"></span>
+            <span> Searching...</span>
+        } else {
+            <span>Get Today's News</span>
+        }
+    </button>
 
-<div class="text-danger">
-    @((MarkupString)Markdig.Markdown.ToHtml(answer))
+    @if (response == null && !isLoading) {
+        <div class="alert alert-info">
+            Click the button above to generate your AI-powered news briefing.
+        </div>
+    } else if (response != null) {
+        <div class="row">
+            <pre style="white-space: pre-wrap;">@response</pre>
+        </div>
+    }
 </div>
 
+
 @code {
-    @using Microsoft.Extensions.Options;
-    @using System.Threading.Tasks;
-    @using Google.GenAI;
-    @using Google.GenAI.Types;
     @using Microsoft.VisualBasic;
-    private string apiKey;
-    string answer = "";
 
-    protected override async Task OnInitializedAsync()
-    {
-        apiKey = ApiSettings.Value.GeminiAPIKey;
-        answer = await GenerateContentSimpleText.main(apiKey);
+    private string? response;
+    private bool isLoading = false;
+    private List<string> myInterests = new List<string> { "Dotnet 10", "Cybersecurity" };
+
+    private async Task GetNews() {
+        isLoading = true;
         StateHasChanged();
-
-    }
-
-    public class GenerateContentSimpleText {
-
-        String answer = "";
-        public static async Task<string> main(string apiKey) {
-
-            var client = new Client(apiKey:apiKey);
-            var response = await client.Models.GenerateContentAsync(
-                model: "gemini-3-flash-preview", contents: "Explain how AI works in a few words and use markdown styling"
-            );
-            return response.Candidates[0].Content.Parts[0].Text;
-
-        }
-
+        await GeminiService.FetchNewsAsync(myInterests);
+        response = GeminiService.GetResponse();
+        isLoading = false;
+        StateHasChanged();
     }
 }
+

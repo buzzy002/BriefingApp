@@ -9,6 +9,8 @@ builder.Services.AddRazorComponents()
 builder.Services.Configure<ApiSettings>(
     builder.Configuration.GetSection("ApiSettings"));
 
+builder.Services.AddScoped<GeminiAPI>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
