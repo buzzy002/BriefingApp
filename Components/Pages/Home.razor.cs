@@ -16,7 +16,7 @@ public partial class Home {
     private async Task GetNews() {
         if(preferences.HasNotInterest()) return;
         isLoading = true;
-        await GeminiService.FetchNewsAsync(preferences.interests);
+        await GeminiService.FetchNewsAsync(preferences.interests, preferences.isBelgiumNewsWanted, preferences.isWorldNewsWanted);
         response = GeminiService.GetResponse();
         isLoading = false;
     }
