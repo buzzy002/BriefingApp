@@ -8,7 +8,7 @@ public class BriefingFormatter {
     
     public string ToEmailHtml(Briefing briefing) {
 
-        if(briefing.articles == null) return string.Empty;
+        if(briefing.articles == null || briefing.articles.Count == 0) return string.Empty;
         
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -37,7 +37,7 @@ public class BriefingFormatter {
 
     public string ToWebAppHtml(Briefing briefing) {
 
-        if(briefing.articles == null) return string.Empty;
+        if(briefing.articles == null || briefing.articles.Count == 0) return string.Empty;
         
         StringBuilder stringBuilder = new StringBuilder();
 
