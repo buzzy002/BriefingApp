@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Google.GenAI;
 using Google.GenAI.Types;
-using Microsoft.Extensions.Options;
 
 namespace BriefingApp.Services;
 
@@ -41,7 +40,8 @@ public class GeminiAPI {
                             2. NEWS SOURCE : major, reputable news organizations (e.g., Reuters, AP, TechCrunch, BBC). 
                             Avoid blogs, social media posts, or login-walled content.
                             3. CANONICAL LINKS: For the 'sourceUrl', you MUST provide the direct, original URL of the news article. 
-                            DO NOT use redirection links, proxy links, or URLs starting with 'vertexaisearch.cloud.google.com'. 
+                            DO NOT use redirection links, proxy links, or URLs starting with 'vertexaisearch.cloud.google.com'.
+                            if you are not 100% certain the URL exists and is accessible, leave it empty rather than guessing. NEVER construct or infer URLs.
                             4. BREVITY: Summaries for BELGIUM and GLOBAL should be 2 sentences. Summaries for specific interests should be 3-4 sentences.
                             5. TOPICS : For Belgium/Global topics, use incremental values like 'Belgium 01', 'Belgium 02'.
                             5. OUTPUT: Return ONLY a valid JSON array.
@@ -69,7 +69,7 @@ public class GeminiAPI {
 
                     foreach (var article in articles) {
                         resolveTasks.Add(Task.Run(async () => {
-                            article.sourceUrl = await ResolveLinkAsync(article.sourceUrl);
+                            article.sourceUrl = await ResolveAndValidateLinkAsync(article.sourceUrl);
                         }));
                     }
 
@@ -93,18 +93,24 @@ public class GeminiAPI {
         }
     }
 
-    private async Task<string> ResolveLinkAsync(string redirectURL) {
+    private async Task<string> ResolveAndValidateLinkAsync(string url) {
+
+        string domainFallback;
+        try {
+            Uri uri = new Uri(url);
+            domainFallback = $"{uri.Scheme}://{uri.Host}";
+        } catch { return string.Empty; }
         
         try {
             using var httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
-            var httpResponse = await httpClient.GetAsync(redirectURL);
+            var httpResponse = await httpClient.GetAsync(url);
 
-            string? cleanURL = httpResponse.Headers.Location?.ToString();
-            return cleanURL ?? redirectURL;
+            if(httpResponse.Headers.Location != null) return httpResponse.Headers.Location.ToString();
 
-        } catch {
-            return redirectURL;
-        }
+            if(httpResponse.IsSuccessStatusCode) return url;
+
+            return domainFallback;
+        } catch { return domainFallback; }
 
     }
 
