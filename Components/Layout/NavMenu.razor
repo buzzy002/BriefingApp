@@ -13,22 +13,26 @@
         <AuthorizeView>
             <Authorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/settings">Settings</NavLink>
+                    <NavLink class="nav-link d-flex gap-2" href="/settings">
+                        <i class="bi bi-gear"></i> Settings
+                    </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <a class="nav-link" href="/Account/Logout">Logout</a>
+                    <a class="nav-link d-flex gap-2" href="/Account/Logout">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
                 </div>
             </Authorized>
 
             <NotAuthorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Account/Register">
-                        Register
+                    <NavLink class="nav-link d-flex gap-2" href="/Account/Register">
+                        <i class="bi bi-person-plus"></i> Register
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Account/Login">
-                        Login
+                    <NavLink class="nav-link d-flex gap-2" href="/Account/Login">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
                     </NavLink>
                 </div>
             </NotAuthorized>

@@ -20,7 +20,7 @@ public class BriefingFormatter {
             
             stringBuilder.Append($@"
                 <div style=""margin-bottom: 3rem"">
-                    <h3>[{formattedTopic}] <span style=""text-decoration: underline"" {article.newsTitle}</span></h3>
+                    <h3>[{formattedTopic}] <span style=""text-decoration: underline""> {article.newsTitle}</span></h3>
                     <p>{article.summary}</p>
             ");
 
@@ -48,9 +48,9 @@ public class BriefingFormatter {
             string formattedTopic = DisplayTopic(article.topic);
             
             stringBuilder.Append($@"
-                <div class=""my-3"">
-                    <h4>[{formattedTopic}] <span class=""text-decoration-underline"" {article.newsTitle}</span></h4>
-                    <p class=""fs-5"">{article.summary}</p>
+                <div class=""my-4"">
+                    <h4>[{formattedTopic}] <span class=""text-decoration-underline mb-2""> {article.newsTitle}</span></h4>
+                    <p class=""fs-5"" style=""margin-bottom: -1rem"">{article.summary}</p>
             ");
 
             if(article.sourceUrl == string.Empty) stringBuilder.Append($"<p class=\"fw-bold fst-italic fs-5\">Source Unavailable</p>");

@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Components;
-using BriefingApp.Models;
-using BriefingApp.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
-using BriefingApp.Data;
 using Microsoft.EntityFrameworkCore;
+
+using BriefingApp.Models;
+using BriefingApp.Services;
+using BriefingApp.Data;
 
 namespace BriefingApp.Components.Pages;
 
@@ -15,13 +16,15 @@ public partial class Home {
     [Inject] private AppDbContext DbContext { get; set; } = default!;
     [Inject] private GeminiAPI GeminiService { get; set; } = default!;
     [Inject] private EncryptionService EncryptionService { get; set; } = default!;
-    [Inject] private ILogger<Home> Logger { get; set; } = default!;
+    [Inject] private BriefingFormatter BriefingFormatter { get; set; } = default!;
+    [Inject] private ILogger<Home> _logger { get; set; } = default!;
 
-    private AppUser? currentUser;
-    private UserPreferences preferences = new UserPreferences();
-    private string? response;
-    private bool isLoading = false;
-    private string newInterest = string.Empty;
+    private AppUser? _currentUser;
+    private UserPreferences _preferences = new UserPreferences();
+    private string? _response;
+    private bool _isLoading = false;
+    private string _newInterest = string.Empty;
+    private CancellationTokenSource? _preferedTimeCts;
 
     protected override async Task OnInitializedAsync() {
         
@@ -29,58 +32,71 @@ public partial class Home {
         var claimUser = authState.User;
 
         if(claimUser.Identity?.IsAuthenticated == true) {
-            currentUser = await UserManager.Users
+            _currentUser = await UserManager.Users
                 .Include(u => u.preferences)
                 .FirstOrDefaultAsync(u => u.UserName == claimUser.Identity.Name);
 
-            if(currentUser != null) preferences = currentUser.preferences;
+            if(_currentUser != null) _preferences = _currentUser.preferences;
         };
 
     }
 
-    private async Task GetNews() {
-        if(preferences.HasNotInterest()) return;
-        if(currentUser?.EncryptedGeminiApiKey == null) {
-            response = "Please set your Gemini API key in Settings";
+    private async Task GetBriefingExample() {
+        if(_preferences.HasNotInterest() && !_preferences.isBelgiumNewsWanted && !_preferences.isWorldNewsWanted) return;
+        if(_currentUser?.EncryptedGeminiApiKey == null) {
+            _response = "Please set your Gemini API key in Settings";
             return;
         }
 
-
-        isLoading = true;
-        string apiKey = EncryptionService.Decrypt(currentUser.EncryptedGeminiApiKey);
-        await GeminiService.FetchNewsAsync(preferences.interests, preferences.isBelgiumNewsWanted, preferences.isWorldNewsWanted, apiKey);
-        response = GeminiService.GetResponse();
-        isLoading = false;
+        _isLoading = true;
+        string apiKey = EncryptionService.Decrypt(_currentUser.EncryptedGeminiApiKey);
+        Briefing briefing = await GeminiService.FetchNewsAsync(_preferences.interests, _preferences.isBelgiumNewsWanted, _preferences.isWorldNewsWanted, apiKey);
+        _logger.LogInformation($"Articles count: {briefing.articles.Count}");
+        foreach (var a in briefing.articles) { _logger.LogInformation($"Topic: {a.topic} | Title: {a.newsTitle}"); }
+        _response = BriefingFormatter.ToWebAppHtml(briefing);
+        _isLoading = false;
     }
 
     private async Task SavePreferences() { await DbContext.SaveChangesAsync(); }
 
     private async void OnPreferedTimeChanged() { 
-        await SavePreferences();
-        Logger.LogInformation($"Prefered time changed to : {preferences.preferedTime}"); 
+        _preferedTimeCts?.Cancel();
+        _preferedTimeCts = new CancellationTokenSource();
+
+        try {
+            await Task.Delay(1000, _preferedTimeCts.Token);
+            await SavePreferences();
+            _logger.LogInformation($"Prefered time changed to : {_preferences.preferedTime}"); 
+        } catch (TaskCanceledException) {}
     }
 
     private async void OnToggleBelgiumNews() {
         await SavePreferences();
-        Logger.LogInformation($"Belgium news toggled to {preferences.isBelgiumNewsWanted}"); 
+        _logger.LogInformation($"Belgium news toggled to {_preferences.isBelgiumNewsWanted}"); 
     }
 
     private async void OnToggleWorldNews() {
         await SavePreferences();
-        Logger.LogInformation($"World news toggled to {preferences.isWorldNewsWanted}"); 
+        _logger.LogInformation($"World news toggled to {_preferences.isWorldNewsWanted}"); 
     }
 
     private async void AddInterest() {
-        if(newInterest == string.Empty) return;
-        Logger.LogInformation($"New interest added : {newInterest}");
-        preferences.AddInterest(newInterest);
-        newInterest = string.Empty;
+        if(_newInterest == string.Empty) return;
+        _logger.LogInformation($"New interest added : {_newInterest}");
+        _preferences.AddInterest(_newInterest);
+        _newInterest = string.Empty;
         await SavePreferences();
     }
 
     private async void RemoveInterest(string interestToRemove) {
-        Logger.LogInformation($"Interest deleted : {interestToRemove}");
-        preferences.RemoveInterest(interestToRemove);
+        _logger.LogInformation($"Interest deleted : {interestToRemove}");
+        _preferences.RemoveInterest(interestToRemove);
+        await SavePreferences();
+    }
+
+    private async void ResetInterest() {
+        _logger.LogInformation($"Interests reseted");
+        _preferences.ResetInterest();
         await SavePreferences();
     }
 

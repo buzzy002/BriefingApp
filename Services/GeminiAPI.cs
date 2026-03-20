@@ -9,7 +9,8 @@ namespace BriefingApp.Services;
 public class GeminiAPI {
 
     private readonly ILogger<GeminiAPI> _logger;
-    private string? _lastResponse;
+
+    public GeminiAPI(ILogger<GeminiAPI> logger) { _logger = logger; }
 
     public async Task<Briefing> FetchNewsAsync(List<string> interests, bool isBelgiumNewsWanted, bool isWorldNewsWanted, string apiKey) {
 
