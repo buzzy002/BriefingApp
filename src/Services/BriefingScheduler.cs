@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 using BriefingApp.Data;
 using BriefingApp.Models;
-using System.Text.Json;
 
 namespace BriefingApp.Services;
 

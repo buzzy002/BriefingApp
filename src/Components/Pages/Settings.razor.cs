@@ -18,6 +18,7 @@ public partial class Settings {
     private AppUser? _currentUser;
     private string _apiKey = string.Empty;
     private string? _message;
+    private bool _showKey = false;
 
     protected override async Task OnInitializedAsync() {
         
@@ -41,5 +42,7 @@ public partial class Settings {
         _message = "API key saved successfully !";
 
     }
+
+    private void ToggleShowKey() => _showKey = !_showKey;
 
 }

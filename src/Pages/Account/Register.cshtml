@@ -1,16 +1,31 @@
 @page
 @model BriefingApp.Pages.Account.RegisterModel
 
-<form method="post">
-    @Html.AntiForgeryToken()
+<div class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="card shadow-sm" style="width: 100%; max-width: 400px;">
+        <div class="card-body p-4">
+            <h3 class="card-title text-center mb-4">Create an account</h3>
 
-    @if(Model.Error != null) {
-        <div class="alert alert-danger">
-            @Model.Error
+            @if (Model.Error != null) {
+                <div class="alert alert-danger">@Model.Error</div>
+            }
+
+            <form method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="Email" class="form-control" placeholder="you@example.com" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="Password" class="form-control" placeholder="••••••••" />
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Register</button>
+            </form>
+
+            <p class="text-center text-muted mt-3 mb-0">
+                Already have an account? <a href="/Account/Login">Login</a>
+            </p>
         </div>
-    }
-
-    <input type="email" name="Email" class="formControl" placeholder="Email" />
-    <input type="password" name="Password" class="form-control" placeholder="Password" />
-    <button type="submit" class="btn btn-primary">Register</button>
-</form>
+    </div>
+</div>
