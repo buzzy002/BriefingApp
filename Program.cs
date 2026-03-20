@@ -16,6 +16,7 @@ builder.Services.AddScoped<GeminiAPI>();
 
 builder.Services.AddSingleton<EncryptionService>();
 builder.Services.AddSingleton<EmailService>();
+builder.Services.AddSingleton<BriefingFormatter>();
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=app.db"));
 

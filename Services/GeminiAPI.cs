@@ -2,17 +2,21 @@ using System.Text.Json;
 using Google.GenAI;
 using Google.GenAI.Types;
 
+using BriefingApp.Models;
+
 namespace BriefingApp.Services;
 
 public class GeminiAPI {
+
+    private readonly ILogger<GeminiAPI> _logger;
     private string? _lastResponse;
 
-    public async Task FetchNewsAsync(List<string> interests, bool isBelgiumNewsWanted, bool isWorldNewsWanted, string apiKey) {
+    public async Task<Briefing> FetchNewsAsync(List<string> interests, bool isBelgiumNewsWanted, bool isWorldNewsWanted, string apiKey) {
 
         var _client = new Client(apiKey: apiKey);
 
         bool hasInterest = interests == null || !interests.Any();
-        if (!hasInterest && !isBelgiumNewsWanted && !isWorldNewsWanted) return;
+        if (!hasInterest && !isBelgiumNewsWanted && !isWorldNewsWanted) return new Briefing();
 
         List<string> sections = new List<string>();
         string yesterday = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
@@ -74,15 +78,15 @@ public class GeminiAPI {
                     }
 
                     await Task.WhenAll(resolveTasks);
-                    _lastResponse = JsonSerializer.Serialize(articles);
+                    return new Briefing { articles = articles, fetchedAt = DateTime.Now };
                 }
             }
+            return new Briefing();
         } catch (Exception ex) {
-            _lastResponse = $"Error : {ex.Message}";
+            _logger.LogError($"{ex.Message}");
+            return new Briefing();
         }
     }
-
-    public string GetResponse() => _lastResponse ?? "[]";
 
     public async Task GetAvailablesModelsAsync(string apiKey) {
         var _client = new Client(apiKey: apiKey);

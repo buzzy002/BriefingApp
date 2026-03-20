@@ -23,7 +23,7 @@ public class EmailService {
         message.To.Add(new MailboxAddress("", toEmail));
         message.Subject = $"Your daily briefing - {DateTime.Now:dd MMMM yyyy}";
 
-        message.Body = new TextPart("plain") { Text = briefingContent };
+        message.Body = new TextPart("html") { Text = briefingContent };
 
         using var smtp = new SmtpClient();
         await smtp.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 using BriefingApp.Data;
 using BriefingApp.Models;
+using System.Text.Json;
 
 namespace BriefingApp.Services;
 
@@ -34,6 +35,7 @@ public class BriefingScheduler : BackgroundService {
         GeminiAPI geminiService = scope.ServiceProvider.GetRequiredService<GeminiAPI>();
         EmailService emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
         EncryptionService encryptionService = scope.ServiceProvider.GetRequiredService<EncryptionService>();
+        BriefingFormatter briefingFormatter = scope.ServiceProvider.GetRequiredService<BriefingFormatter>();
 
         TimeOnly now = TimeOnly.FromDateTime(DateTime.Now);
 
@@ -53,10 +55,10 @@ public class BriefingScheduler : BackgroundService {
 
             try {
                 string apiKey = encryptionService.Decrypt(user.EncryptedGeminiApiKey);
-                await geminiService.FetchNewsAsync(user.preferences.interests, user.preferences.isBelgiumNewsWanted, user.preferences.isWorldNewsWanted, apiKey);
+                Briefing briefing = await geminiService.FetchNewsAsync(user.preferences.interests, user.preferences.isBelgiumNewsWanted, user.preferences.isWorldNewsWanted, apiKey);
 
-                string briefing = geminiService.GetResponse();
-                await emailService.SendBriefingAsync(user.Email, briefing);
+                if(briefing.articles == null) throw new Exception("No article");
+                await emailService.SendBriefingAsync(user.Email, briefingFormatter.ToEmailHtml(briefing));
                 _logger.LogInformation($"Briefing sent to {user.Email}");
             } catch (Exception ex) {
                 _logger.LogError($"Failed to send briefing to {user.Email} : {ex.Message}");
