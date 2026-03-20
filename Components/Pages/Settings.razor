@@ -1,0 +1,22 @@
+@page "/settings"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<h3>Settings</h3>
+
+<div class="container my-4">
+    <div class="row mb-3">
+        <div class="col-auto">
+            <label class="col-form-label">Gemini API Key</label>
+        </div>
+        <div class="col-auto">
+            <input type="text" class="form-control" @bind="_apiKey" />
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" @onclick="SaveApiKey">Save</button>
+        </div>
+    </div>
+    @if (_message != null) {
+        <div class="alert alert-success">@_message</div>
+    }
+</div>

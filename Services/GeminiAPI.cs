@@ -6,17 +6,12 @@ using Microsoft.Extensions.Options;
 namespace BriefingApp.Services;
 
 public class GeminiAPI {
-    private readonly Client _client;
     private string? _lastResponse;
 
-    public GeminiAPI(IOptions<ApiSettings> apiSettings) {
-        string apiKey = apiSettings.Value?.GeminiAPIKey 
-                        ?? throw new ArgumentNullException("API Key is missing in appsettings.json");
-        
-        _client = new Client(apiKey: apiKey);
-    }
+    public async Task FetchNewsAsync(List<string> interests, bool isBelgiumNewsWanted, bool isWorldNewsWanted, string apiKey) {
 
-    public async Task FetchNewsAsync(List<string> interests, bool isBelgiumNewsWanted, bool isWorldNewsWanted) {
+        var _client = new Client(apiKey: apiKey);
+
         bool hasInterest = interests == null || !interests.Any();
         if (!hasInterest && !isBelgiumNewsWanted && !isWorldNewsWanted) return;
 
@@ -89,7 +84,9 @@ public class GeminiAPI {
 
     public string GetResponse() => _lastResponse ?? "[]";
 
-    public async Task GetAvailablesModelsAsync() {
+    public async Task GetAvailablesModelsAsync(string apiKey) {
+        var _client = new Client(apiKey: apiKey);
+
         var models = await _client.Models.ListAsync();
         await foreach (var m in models) {
             Console.WriteLine($"Available: {m.Name}");
@@ -112,6 +109,8 @@ public class GeminiAPI {
     }
 
     private string ExtractJson(string text) {
+
+        text = text.Replace("```json", "").Replace("```", "").Trim();
         
         int start = text.IndexOf('[');
         int end = text.LastIndexOf(']');

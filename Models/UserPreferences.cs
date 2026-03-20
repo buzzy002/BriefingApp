@@ -5,8 +5,8 @@ public class UserPreferences {
     public int Id { get; set; }
     public List<string> interests { get; set; }
     public TimeOnly preferedTime {get; set;}
-    public bool isBelgiumNewsWanted;
-    public bool isWorldNewsWanted;
+    public bool isBelgiumNewsWanted {get; set;}
+    public bool isWorldNewsWanted {get; set;}
     
     public UserPreferences() {
         
@@ -27,22 +27,11 @@ public class UserPreferences {
 
     public bool RemoveInterest(string interestToRemove) { return interests.Remove(interestToRemove.ToLower()); }
 
-    public void ResetInterest() { interests.Clear(); }
+    public void ResetInterest() => interests.Clear();
 
-    public void ToggleBelgiumNews() {
+    public void ToggleBelgiumNews() => isBelgiumNewsWanted = !isBelgiumNewsWanted;
+    public void ToggleWorldNews() => isWorldNewsWanted = !isWorldNewsWanted;
 
-        if(isBelgiumNewsWanted) isBelgiumNewsWanted = false;
-        else isBelgiumNewsWanted = true;
-    
-    }
-
-    public void ToggleWorldNews() {
-        
-        if(isWorldNewsWanted) isWorldNewsWanted = false;
-        else isWorldNewsWanted = true;
-
-    }
-
-    public bool HasNotInterest() { return interests.Capacity == 0; }
+    public bool HasNotInterest() { return interests.Count == 0; }
 
 }

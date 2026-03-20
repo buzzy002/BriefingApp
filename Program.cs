@@ -12,9 +12,6 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddRazorPages();
 
-builder.Services.Configure<ApiSettings>(
-    builder.Configuration.GetSection("ApiSettings"));
-
 builder.Services.AddScoped<GeminiAPI>();
 
 builder.Services.AddSingleton<EncryptionService>();
