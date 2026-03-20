@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Google.GenAI" Version="1.4.0" />
-    <PackageReference Include="Markdig" Version="0.45.0" />
+    <PackageReference Include="MailKit" Version="4.15.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.5">

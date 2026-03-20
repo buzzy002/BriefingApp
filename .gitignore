@@ -135,3 +135,8 @@ Thumbs.db
 appsettings.Development.json
 appsettings.*.json
 !appsettings.json
+
+# Database
+app.db
+app.db-shm
+app.db-wal

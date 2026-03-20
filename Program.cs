@@ -15,8 +15,11 @@ builder.Services.AddRazorPages();
 builder.Services.AddScoped<GeminiAPI>();
 
 builder.Services.AddSingleton<EncryptionService>();
+builder.Services.AddSingleton<EmailService>();
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=app.db"));
+
+builder.Services.AddHostedService<BriefingScheduler>();
 
 builder.Services.AddIdentity<AppUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
