@@ -1,6 +1,4 @@
-public class ApiSettings {
-    public string GeminiAPIKey { get; set; }
-}
+namespace BriefingApp.Models;
 
 public class NewsItem {
     public string topic { get; set; } = string.Empty;
@@ -8,4 +6,9 @@ public class NewsItem {
     public string summary { get; set; } = string.Empty;
     public string sourceUrl { get; set; } = string.Empty;
 
+}
+
+public class Briefing {
+    public List<NewsItem>? articles { get; set; } = new List<NewsItem>()!;
+    public DateTime fetchedAt { get; set; }
 }

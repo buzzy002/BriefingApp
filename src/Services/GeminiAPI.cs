@@ -1,24 +1,23 @@
 using System.Text.Json;
 using Google.GenAI;
 using Google.GenAI.Types;
-using Microsoft.Extensions.Options;
 
-namespace BriefingApp.Components;
+using BriefingApp.Models;
+
+namespace BriefingApp.Services;
 
 public class GeminiAPI {
-    private readonly Client _client;
-    private string? _lastResponse;
 
-    public GeminiAPI(IOptions<ApiSettings> apiSettings) {
-        string apiKey = apiSettings.Value?.GeminiAPIKey 
-                        ?? throw new ArgumentNullException("API Key is missing in appsettings.json");
-        
-        _client = new Client(apiKey: apiKey);
-    }
+    private readonly ILogger<GeminiAPI> _logger;
 
-    public async Task FetchNewsAsync(List<string> interests, bool isBelgiumNewsWanted, bool isWorldNewsWanted) {
+    public GeminiAPI(ILogger<GeminiAPI> logger) { _logger = logger; }
+
+    public async Task<Briefing> FetchNewsAsync(List<string> interests, bool isBelgiumNewsWanted, bool isWorldNewsWanted, string apiKey) {
+
+        var _client = new Client(apiKey: apiKey);
+
         bool hasInterest = interests == null || !interests.Any();
-        if (!hasInterest && !isBelgiumNewsWanted && !isWorldNewsWanted) return;
+        if (!hasInterest && !isBelgiumNewsWanted && !isWorldNewsWanted) return new Briefing();
 
         List<string> sections = new List<string>();
         string yesterday = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
@@ -46,7 +45,8 @@ public class GeminiAPI {
                             2. NEWS SOURCE : major, reputable news organizations (e.g., Reuters, AP, TechCrunch, BBC). 
                             Avoid blogs, social media posts, or login-walled content.
                             3. CANONICAL LINKS: For the 'sourceUrl', you MUST provide the direct, original URL of the news article. 
-                            DO NOT use redirection links, proxy links, or URLs starting with 'vertexaisearch.cloud.google.com'. 
+                            DO NOT use redirection links, proxy links, or URLs starting with 'vertexaisearch.cloud.google.com'.
+                            if you are not 100% certain the URL exists and is accessible, leave it empty rather than guessing. NEVER construct or infer URLs.
                             4. BREVITY: Summaries for BELGIUM and GLOBAL should be 2 sentences. Summaries for specific interests should be 3-4 sentences.
                             5. TOPICS : For Belgium/Global topics, use incremental values like 'Belgium 01', 'Belgium 02'.
                             5. OUTPUT: Return ONLY a valid JSON array.
@@ -74,44 +74,54 @@ public class GeminiAPI {
 
                     foreach (var article in articles) {
                         resolveTasks.Add(Task.Run(async () => {
-                            article.sourceUrl = await ResolveLinkAsync(article.sourceUrl);
+                            article.sourceUrl = await ResolveAndValidateLinkAsync(article.sourceUrl);
                         }));
                     }
 
                     await Task.WhenAll(resolveTasks);
-                    _lastResponse = JsonSerializer.Serialize(articles);
+                    return new Briefing { articles = articles, fetchedAt = DateTime.Now };
                 }
             }
+            return new Briefing();
         } catch (Exception ex) {
-            _lastResponse = $"Error : {ex.Message}";
+            _logger.LogError($"{ex.Message}");
+            return new Briefing();
         }
     }
 
-    public string GetResponse() => _lastResponse ?? "[]";
+    public async Task GetAvailablesModelsAsync(string apiKey) {
+        var _client = new Client(apiKey: apiKey);
 
-    public async Task GetAvailablesModelsAsync() {
         var models = await _client.Models.ListAsync();
         await foreach (var m in models) {
             Console.WriteLine($"Available: {m.Name}");
         }
     }
 
-    private async Task<string> ResolveLinkAsync(string redirectURL) {
+    private async Task<string> ResolveAndValidateLinkAsync(string url) {
+
+        string domainFallback;
+        try {
+            Uri uri = new Uri(url);
+            domainFallback = $"{uri.Scheme}://{uri.Host}";
+        } catch { return string.Empty; }
         
         try {
             using var httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
-            var httpResponse = await httpClient.GetAsync(redirectURL);
+            var httpResponse = await httpClient.GetAsync(url);
 
-            string? cleanURL = httpResponse.Headers.Location?.ToString();
-            return cleanURL ?? redirectURL;
+            if(httpResponse.Headers.Location != null) return httpResponse.Headers.Location.ToString();
 
-        } catch {
-            return redirectURL;
-        }
+            if(httpResponse.IsSuccessStatusCode) return url;
+
+            return domainFallback;
+        } catch { return domainFallback; }
 
     }
 
     private string ExtractJson(string text) {
+
+        text = text.Replace("```json", "").Replace("```", "").Trim();
         
         int start = text.IndexOf('[');
         int end = text.LastIndexOf(']');

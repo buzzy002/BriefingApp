@@ -1,0 +1,42 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">BriefingApp</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex gap-2" href="/settings">
+                        <i class="bi bi-gear"></i> Settings
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <a class="nav-link d-flex gap-2" href="/Account/Logout">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </div>
+            </Authorized>
+
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex gap-2" href="/Account/Register">
+                        <i class="bi bi-person-plus"></i> Register
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link d-flex gap-2" href="/Account/Login">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>        
+    </nav>
+</div>
+
